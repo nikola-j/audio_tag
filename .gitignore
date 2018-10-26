@@ -111,4 +111,7 @@ venv.bak/
 out
 gen### Example user template template
 
+# Ignore project specific files:
 dataset
+audioset/vggish_pca_params.npz
+audioset/vggish_model.ckpt
