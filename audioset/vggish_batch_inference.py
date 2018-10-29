@@ -40,7 +40,11 @@ Usage:
 
 from __future__ import print_function
 
-import numpy as np
+import json
+import os
+import pickle
+
+import pandas as pd
 import tensorflow as tf
 
 import vggish_input
@@ -51,8 +55,13 @@ import vggish_slim
 flags = tf.app.flags
 
 flags.DEFINE_string(
-    'wav_files', None,
-    'Path to a file containing paths of wav files. Should contain signed 16-bit PCM samples.')
+    'wav_train', None,
+    'Path to a folder containing train wav files. Should contain signed 16-bit PCM samples.')
+
+flags.DEFINE_string(
+    'wav_csv', None,
+    'Path to a file containing names and labels of wav files. Should contain signed 16-bit PCM samples.')
+
 
 flags.DEFINE_string(
     'checkpoint', 'vggish_model.ckpt',
@@ -63,20 +72,37 @@ flags.DEFINE_string(
     'Path to the VGGish PCA parameters file.')
 
 flags.DEFINE_string(
-    'npy_file', 'output.npy',
-    'Path to a .npy file where embeddings will be written.')
+    'output', 'output',
+    'Where to write the tf records.')
+
 
 FLAGS = flags.FLAGS
 
 
-def main(_):
-    with open(FLAGS.wav_files) as f:
-        files_list = [line.replace('\n', '') for line in f]
+def _int64_feature(value):
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
-    n_files = len(files_list)
-    output_emedding = np.zeros((n_files, 128))
+
+def _bytes_feature(value):
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+
+def main(_):
+
+    train_csv = pd.read_csv(FLAGS.wav_csv)
+
+    n_files = len(train_csv)
     pproc = vggish_postprocess.Postprocessor(FLAGS.pca_params)
-    processed_fnames = []
+    labels = train_csv.label.unique()
+
+    labels_dict = {}
+
+    for i, label in enumerate(labels):
+        labels_dict[label] = i
+
+    with open(FLAGS.output + '.json', 'w+') as outfile:
+        json.dump(labels_dict, outfile)
+
     with tf.Graph().as_default(), tf.Session() as sess:
         # Define the model in inference mode, load the checkpoint, and
         # locate input and output tensors.
@@ -87,23 +113,27 @@ def main(_):
         embedding_tensor = sess.graph.get_tensor_by_name(
             vggish_params.OUTPUT_TENSOR_NAME)
 
-        for n_file, wav_file in enumerate(files_list):
-            examples_batch = vggish_input.wavfile_to_examples(wav_file)
-            print(n_file, '/', n_files)
+        with tf.python_io.TFRecordWriter(FLAGS.output) as writer:
+            output_embeddings = []
+            output_labels = []
 
-            if examples_batch.shape[0] == 0:
-                with open('bad_files.log', 'a') as logf:
-                    logf.write(wav_file + '\n')
-            else:
-                processed_fnames.append(wav_file)
+            for i, row in train_csv.iterrows():
+                filename, label = row['fname'], row['label']
+                examples_batch = vggish_input.wavfile_to_examples(os.path.join(FLAGS.wav_train, filename))
+                print(i, '/', n_files)
 
-                [embedding_batch] = sess.run([embedding_tensor],
-                                             feed_dict={features_tensor: examples_batch})
-                postprocessed_batch = pproc.postprocess(embedding_batch)
-                postprocessed_batch_mean = np.mean(postprocessed_batch, axis=0)
-                output_emedding[n_file, :] = postprocessed_batch_mean
+                if examples_batch.shape[0] == 0:
+                    with open('bad_files.log', 'a') as logf:
+                        logf.write(filename + '\n')
+                else:
+                    [embedding_batch] = sess.run([embedding_tensor],
+                                                 feed_dict={features_tensor: examples_batch})
+                    postprocessed_batch = pproc.postprocess(embedding_batch)
+                    output_embeddings.append(postprocessed_batch)
+                    print(postprocessed_batch.shape)
+                    output_labels.append(labels_dict[label])
 
-        np.save(FLAGS.npy_file, output_emedding)
+            pickle.dump([output_embeddings, output_labels], open(FLAGS.output + ".p", "wb"))
 
 
 if __name__ == '__main__':

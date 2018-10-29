@@ -1,5 +1,8 @@
 numpy
 scipy
 resampy
-tensorflow==1.8.0
+tensorflow-gpu==1.8.0
 six
+pandas
+keras
+scikit-learn
