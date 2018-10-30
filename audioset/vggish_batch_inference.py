@@ -113,27 +113,26 @@ def main(_):
         embedding_tensor = sess.graph.get_tensor_by_name(
             vggish_params.OUTPUT_TENSOR_NAME)
 
-        with tf.python_io.TFRecordWriter(FLAGS.output) as writer:
-            output_embeddings = []
-            output_labels = []
+        output_embeddings = []
+        output_labels = []
 
-            for i, row in train_csv.iterrows():
-                filename, label = row['fname'], row['label']
-                examples_batch = vggish_input.wavfile_to_examples(os.path.join(FLAGS.wav_train, filename))
-                print(i, '/', n_files)
+        for i, row in train_csv.iterrows():
+            filename, label = row['fname'], row['label']
+            examples_batch = vggish_input.wavfile_to_examples(os.path.join(FLAGS.wav_train, filename))
+            print(i, '/', n_files)
 
-                if examples_batch.shape[0] == 0:
-                    with open('bad_files.log', 'a') as logf:
-                        logf.write(filename + '\n')
-                else:
-                    [embedding_batch] = sess.run([embedding_tensor],
-                                                 feed_dict={features_tensor: examples_batch})
-                    postprocessed_batch = pproc.postprocess(embedding_batch)
-                    output_embeddings.append(postprocessed_batch)
-                    print(postprocessed_batch.shape)
-                    output_labels.append(labels_dict[label])
+            if examples_batch.shape[0] == 0:
+                with open('bad_files.log', 'a') as logf:
+                    logf.write(filename + '\n')
+            else:
+                [embedding_batch] = sess.run([embedding_tensor],
+                                             feed_dict={features_tensor: examples_batch})
+                postprocessed_batch = pproc.postprocess(embedding_batch)
+                output_embeddings.append(postprocessed_batch)
+                print(postprocessed_batch.shape)
+                output_labels.append(labels_dict[label])
 
-            pickle.dump([output_embeddings, output_labels], open(FLAGS.output + ".p", "wb"))
+        pickle.dump([output_embeddings, output_labels], open(FLAGS.output + ".p", "wb"))
 
 
 if __name__ == '__main__':
