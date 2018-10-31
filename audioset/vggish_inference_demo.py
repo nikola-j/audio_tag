@@ -96,7 +96,6 @@ def main(_):
         wavfile.write(wav_file, sr, samples)
         wav_file.seek(0)
     examples_batch = vggish_input.wavfile_to_examples(wav_file)
-    print(examples_batch)
 
     # Prepare a postprocessor to munge the model embeddings.
     pproc = vggish_postprocess.Postprocessor(FLAGS.pca_params)
@@ -119,9 +118,7 @@ def main(_):
         [embedding_batch] = sess.run(
             [embedding_tensor], feed_dict={
                 features_tensor: examples_batch})
-        print(embedding_batch)
         postprocessed_batch = pproc.postprocess(embedding_batch)
-        print(postprocessed_batch)
 
         # Write the postprocessed embeddings as a SequenceExample, in a similar
         # format as the features released in AudioSet. Each row of the batch of
@@ -144,7 +141,6 @@ def main(_):
                 }
             )
         )
-        print(seq_example)
         if writer:
             writer.write(seq_example.SerializeToString())
 
