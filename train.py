@@ -195,7 +195,7 @@ def train_model():
               validation_split=0.9, verbose=2, callbacks=[rlrop, prl])
 
     # Save model
-    model.save(f"trained_model_{args.model}.ckpt")
+    model.save(f"models/trained_model_{args.model}.ckpt")
 
 
 if __name__ == '__main__':

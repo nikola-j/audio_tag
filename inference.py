@@ -35,7 +35,8 @@ def labels_to_classes(labels_list):
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument('--model', type=str, default='trained_model.ckpt', help='What model to train')
+    arg_parser.add_argument('--model', type=str, default='models/trained_model.ckpt',
+                            help='What model to use for prediction')
     arg_parser.add_argument('--input_file', type=str, help='On what file to predict')
     args = arg_parser.parse_args()
 
