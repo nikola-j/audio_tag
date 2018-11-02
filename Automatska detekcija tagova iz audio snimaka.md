@@ -1,16 +1,18 @@
 # Automatska detekcija tagova iz audio snimaka
 
-Jedan od najvećih problema sa kojim se suočava semantički veb jeste tagovanje. Pošto korisnici interneta pri kreiranju sadržaja se retko kada posvete tagovanju materijala, jedino skalabilno rešenje jeste da se to radi automatski. Za automatsko tagovanje teksta postoje razne tehnike (PMI, TF-IDF itd), ali za snimke zvuka je to jako teško raditi jer podaci imaju mnogo više šuma. Ali u zadnjih nekoliko godina ova oblast je imala veliku porast u performansama zbog povećanog korišćenja neuralnih mreža i sve većih setova podataka.
+## Uvod
+
+Jedan od najvećih problema sa kojim se suočava semantički veb jeste tagovanje. Pošto korisnici interneta pri kreiranju sadržaja se retko kada posvete tagovanju materijala, jedino skalabilno rešenje jeste da se to radi automatski. Za automatsko tagovanje teksta postoje razne tehnike (PMI, TF-IDF itd), ali za snimke zvuka je to jako teško raditi jer podaci imaju mnogo više šuma. Ali u zadnjih nekoliko godina sistemi koji rešavaju ovaj problem imaju velik porast u performansama zbog povećanog korišćenja neuralnih mreža i sve većih setova podataka.
 
 | ![1541149013758](/home/njovicic/Documents/audio_tag/.images/1541149013758.png) |
 | :----------------------------------------------------------: |
 | Performanse sistema za detekciju događaja tokom vremena ([izvor](http://www.cs.tut.fi/~heittolt/research-sound-event-detection)) |
 
-U ovom radu ću opisati moj sistem za automatsko tagovanje zvuka koji koristi prenos učenja sa mnogo većeg modela  (VGGish) koji je istreniran nad mnogo podataka (oko 70 miliona jutub klipova) na manji set podataka.
+U ovom radu ću opisati moj sistem za automatsko tagovanje zvuka koji koristi prenos učenja sa mnogo većeg modela  (VGGish) koji je istreniran nad mnogo podataka (oko 70 miliona jutub klipova) na manji set podataka koji ima  drugačije labele.
 
 ## Vggish model
 
-VGGish je model koji je istreniran od strane Guglove istraživačke grupe za klasifikaciju zvukova nad jutjub snimcima. To je ustvari adaptirani VGG16 model koji je modifikovan da se nosi sa zvučnim snimcima tako što mu je na ulaz umesto slike stavljen spektogram velicine 96 x 64 koji odgovara 960 milisekundi zvuka a na izlaz zatrazena labela zvucnog signala. 
+VGGish je model koji je istreniran od strane Guglove istraživačke grupe za klasifikaciju zvukova nad jutjub snimcima. To je ustvari adaptirani VGG16 model koji je modifikovan da se nosi sa zvučnim snimcima tako što mu je na ulaz umesto slike stavljen spektogram velicine 96 x 64 koji odgovara 960 milisekundi zvuka a na izlaz zatrazena jedna od 527 labela zvucnog signala.
 
 | ![img](.images/vgg16.png) |
 | :--: |
@@ -26,8 +28,18 @@ Ovako istreniranom modelu oni su izbacili zadnjih par zadnjih slojeva nakon tren
 
 ## Prenos iskustva
 
-U dubokom učenju prenos iskustva označava korišćenje nekog modela za brže treniranje drugog modela na sličnim zadacima. Ovo se radi jer treniranje modela nad velikim setom podataka traje jako dugo i košta mnogo kompjuterskih resorsa. Korišćenjem takvog pre-treniranog modela za novi zadatak omogućava bolje performanse na novom zadatku ukoliko je zadatak povezan.
+U dubokom učenju prenos iskustva označava korišćenje nekog modela za brže treniranje drugog modela na sličnim zadacima. Ovo se radi jer treniranje modela nad velikim setom podataka traje jako dugo i košta mnogo kompjuterskih resorsa. Korišćenjem takvog pre-treniranog modela omogućava bolje performanse na novom zadatku ukoliko   zadatak ima veze sa originalnim zadatkom.
 
-U ovom slučaju koristio sam pre-trenirani VGGish model kako bih ubrzao trening nad [ovim](https://www.kaggle.com/c/freesound-audio-tagging/) setom podataka. Set podataka sam preprocesirao i provukao kroz VGGish model, čime sam dobio 
+U ovom slučaju koristio sam pre-trenirani VGGish model kako bih olakšao trening nad [ovim](https://www.kaggle.com/c/freesound-audio-tagging/) setom podataka koji ima samo 9400 zvučnih uzoraka, gde je za svaki uzorak potrebno predvideti pravu labelu (jednu od 41). Set podataka sam preprocesirao i provukao kroz VGGish model, čime sam dobio svojstva ulaznog signala zapisane kao 128 brojeva za svaku sekundu.
 
-Time sam postigao performanse koje su veće nego da sam trenirao model od nule. 
+Onda sam trenirao nekoliko modela nad tim novim setom podataka čime sam dobio model koji u 55% slučajeva predvidi tačnu labelu za sekundu snimka, a u 81% slučajeva je prava labela među prvih pet predviđanja.
+
+| <img src=".images/modelsnn.png" alt="drawing" width="300"/> |
+| :----------------------------------------------------------: |
+| Model koji je dostigao navedene performanse |
+
+## Zaključak
+
+Prenos iskustva je odlična tehnika kada je potrebno rešiti neki specifični zadatak, a nemamo dovoljno kompjuterskih resorsa ili nemamo veliki set podataka.
+
+Napretkom dubokog učenja automatsko procesiranje velikog broja podataka koje stvara internet postaje sve bolje i bolje, verujem da će to najviše doprineti da se koncepti semantičkog veba više primenjuju nego sada.

@@ -74,7 +74,7 @@ def define_model_snn_cifar10():
     # Let's train the model using RMSprop
     model.compile(loss='categorical_crossentropy',
                   optimizer=opt,
-                  metrics=['accuracy'])
+                  metrics=['accuracy', 'top_k_categorical_accuracy'])
     print(model.summary())
     return model
 
