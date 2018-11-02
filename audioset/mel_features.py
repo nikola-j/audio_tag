@@ -209,6 +209,15 @@ def log_mel_spectrogram(data,
     2D np.array of (num_frames, num_mel_bins) consisting of log mel filterbank
     magnitudes for successive frames.
   """
+  # from matplotlib.pyplot import plot
+  # from matplotlib.pyplot import show
+  # from matplotlib.pyplot import imshow
+  # from matplotlib.pyplot import xlabel, ylabel
+
+  # plot(data)
+  # xlabel('vreme')
+  # ylabel('amplituda')
+  # show()
   window_length_samples = int(round(audio_sample_rate * window_length_secs))
   hop_length_samples = int(round(audio_sample_rate * hop_length_secs))
   fft_length = 2 ** int(np.ceil(np.log(window_length_samples) / np.log(2.0)))
@@ -217,7 +226,17 @@ def log_mel_spectrogram(data,
       fft_length=fft_length,
       hop_length=hop_length_samples,
       window_length=window_length_samples)
+  print(spectrogram.shape)
+  # imshow(np.log(spectrogram))
+  # xlabel('frekvencija')
+  # ylabel('vreme')
+  # show()
   mel_spectrogram = np.dot(spectrogram, spectrogram_to_mel_matrix(
       num_spectrogram_bins=spectrogram.shape[1],
       audio_sample_rate=audio_sample_rate, **kwargs))
+  # imshow(np.log(mel_spectrogram))
+  # xlabel('bin')
+  # ylabel('vreme')
+  # show()
+  print(mel_spectrogram.shape)
   return np.log(mel_spectrogram + log_offset)

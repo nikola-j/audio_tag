@@ -10,7 +10,8 @@ from keras.backend.tensorflow_backend import set_session
 from keras.callbacks import ReduceLROnPlateau, Callback
 from keras.layers import Dense, BatchNormalization, Dropout, AlphaDropout, Conv1D, Activation, MaxPooling1D, Flatten
 from keras.optimizers import Adam
-from keras.utils import to_categorical
+from keras.utils import to_categorical, plot_model
+from sklearn.metrics import f1_score, recall_score, precision_score
 from sklearn.utils import shuffle
 
 
@@ -45,23 +46,23 @@ def define_model_large():
 def define_model_snn_cifar10():
     model = Sequential()
 
-    model.add(Conv1D(32, 3, padding='same', input_shape=[1, 128],
+    model.add(Conv1D(16, 3, strides=2, padding='same', input_shape=[128, 1],
                      kernel_initializer='lecun_normal', bias_initializer='zeros'))
     model.add(Activation('selu'))
-    model.add(Conv1D(32, 1, kernel_initializer='lecun_normal', bias_initializer='zeros'))
+    model.add(Conv1D(16, 3, kernel_initializer='lecun_normal', bias_initializer='zeros'))
     model.add(Activation('selu'))
-    # model.add(MaxPooling1D(pool_size=2))
+    model.add(MaxPooling1D(pool_size=2))
     model.add(AlphaDropout(0.1))
 
-    model.add(Conv1D(64, 1, padding='same', kernel_initializer='lecun_normal', bias_initializer='zeros'))
+    model.add(Conv1D(32, 3, padding='same', kernel_initializer='lecun_normal', bias_initializer='zeros'))
     model.add(Activation('selu'))
-    model.add(Conv1D(64, 1, kernel_initializer='lecun_normal', bias_initializer='zeros'))
+    model.add(Conv1D(32, 3, kernel_initializer='lecun_normal', bias_initializer='zeros'))
     model.add(Activation('selu'))
-    # model.add(MaxPooling1D(pool_size=2))
+    model.add(MaxPooling1D(pool_size=2))
     model.add(AlphaDropout(0.1))
 
     model.add(Flatten())
-    model.add(Dense(512, kernel_initializer='lecun_normal', bias_initializer='zeros'))
+    model.add(Dense(41, kernel_initializer='lecun_normal', bias_initializer='zeros'))
     model.add(Activation('selu'))
     model.add(AlphaDropout(0.2))
     model.add(Dense(41, kernel_initializer='lecun_normal', bias_initializer='zeros'))
@@ -74,6 +75,7 @@ def define_model_snn_cifar10():
     model.compile(loss='categorical_crossentropy',
                   optimizer=opt,
                   metrics=['accuracy'])
+    print(model.summary())
     return model
 
 
@@ -107,17 +109,18 @@ def define_model_selu():
 
 def define_model_small():
     inputs = Input((128,))
-    x1f = Dense(128, activation='relu')(inputs)
+    x1f = Dense(8, activation='relu')(inputs)
     x1b = BatchNormalization()(x1f)
-    x1d = Dropout(0.3)(x1b)
-    x2f = Dense(64, activation='relu')(x1d)
+    x1d = Dropout(0.05)(x1b)
+    x2f = Dense(16, activation='relu')(x1d)
     x2b = BatchNormalization()(x2f)
-    x2d = Dropout(0.3)(x2b)
+    x2d = Dropout(0.05)(x2b)
     x2f = Dense(41, activation='softmax')(x2d)
     model = Model(inputs=inputs, outputs=x2f)
 
     model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0.01),
                   metrics=['accuracy', ])
+    print(model.summary())
     return model
 
 
@@ -141,7 +144,7 @@ def format_dataset(x, y, model):
     full_x = (full_x - full_x.mean(axis=0)) / full_x.std(axis=0)  # Normalise dataset
 
     if model in ['snn']:
-        full_x = full_x[:, None, :]
+        full_x = full_x[:, :, None]
 
     full_y = np.array(full_y)
 
@@ -159,7 +162,7 @@ models = {"selu": define_model_selu,
 def train_model():
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument('--model', type=str, default='snn', help='What model to train')
-    arg_parser.add_argument('--batch_size', type=int, default=1024, help='What batch size to use')
+    arg_parser.add_argument('--batch_size', type=int, default=128, help='What batch size to use')
     args = arg_parser.parse_args()
 
     # Limit gpu usage:
@@ -175,7 +178,7 @@ def train_model():
     x, y = dataset
     x, y = shuffle(x, y)
 
-    split_point = int(0.9 * len(x))
+    split_point = int(0.7 * len(x))
 
     x_train, y_train = format_dataset(x[:split_point], y[:split_point], args.model)
     x_val, y_val = format_dataset(x[split_point:], y[split_point:], args.model)
@@ -185,17 +188,38 @@ def train_model():
 
     model = models[args.model]()
 
-    rlrop = ReduceLROnPlateau('loss', factor=0.8, patience=10, min_lr=0.000001, cooldown=10)
+    rlrop = ReduceLROnPlateau('loss', factor=0.8, patience=15, min_lr=0.000001, cooldown=10)
     prl = PrintLearningRate()
+    f1 = F1Metric()
+
+    plot_model(model, to_file=f'.images/model{args.model}.png', show_shapes=True, show_layer_names=True)
     # Fit data
     model.fit(x_train, y_train,
               validation_data=[x_val, y_val],
               batch_size=args.batch_size,
-              epochs=1000,
-              validation_split=0.9, verbose=2, callbacks=[rlrop, prl])
+              epochs=1000, verbose=2, callbacks=[rlrop, prl, f1])
 
     # Save model
     model.save(f"models/trained_model_{args.model}.ckpt")
+
+
+class F1Metric(Callback):
+    def on_train_begin(self, logs={}):
+        self.val_f1s = []
+        self.val_recalls = []
+        self.val_precisions = []
+
+    def on_epoch_end(self, epoch, logs={}):
+        val_predict = (np.asarray(self.model.predict(self.validation_data[0]))).round()
+        val_targ = self.validation_data[1]
+        _val_f1 = f1_score(val_targ, val_predict, average="weighted")
+        _val_recall = recall_score(val_targ, val_predict, average="weighted")
+        _val_precision = precision_score(val_targ, val_predict, average="weighted")
+        self.val_f1s.append(_val_f1)
+        self.val_recalls.append(_val_recall)
+        self.val_precisions.append(_val_precision)
+        print(" — val_f1: % f — val_precision: % f — val_recall % f" % (_val_f1, _val_precision, _val_recall))
+        return
 
 
 if __name__ == '__main__':
