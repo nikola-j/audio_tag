@@ -25,7 +25,7 @@ Usage:
   # Run WAV files through the model and write the embeddings to a .npy file. The model
   # checkpoint is loaded from vggish_model.ckpt and the PCA parameters are
   # loaded from vggish_pca_params.npz in the current directory.
-  $ python vggish_batch_inference.py --wav_files /path/to/a/text/file/containing/wav/file/paths
+  $ python batch_inference.py --wav_files /path/to/a/text/file/containing/wav/file/paths
 
   # Run WAV files (as listed in a text file) through the model and also write the embeddings to
   # a .npy file (of shape (# wav files, 128)). The model checkpoint and PCA parameters are explicitly
@@ -47,10 +47,10 @@ import pickle
 import pandas as pd
 import tensorflow as tf
 
-import vggish_input
-import vggish_params
-import vggish_postprocess
-import vggish_slim
+from audioset import vggish_input
+from audioset import vggish_params
+from audioset import vggish_postprocess
+from audioset import vggish_slim
 
 flags = tf.app.flags
 
@@ -64,15 +64,15 @@ flags.DEFINE_string(
 
 
 flags.DEFINE_string(
-    'checkpoint', 'vggish_model.ckpt',
+    'checkpoint', 'audioset/vggish_model.ckpt',
     'Path to the VGGish checkpoint file.')
 
 flags.DEFINE_string(
-    'pca_params', 'vggish_pca_params.npz',
+    'pca_params', 'audioset/vggish_pca_params.npz',
     'Path to the VGGish PCA parameters file.')
 
 flags.DEFINE_string(
-    'output', 'output',
+    'output', 'audioset/output',
     'Where to write the tf records.')
 
 

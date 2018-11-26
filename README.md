@@ -24,10 +24,10 @@ Download dataset from this competition: https://www.kaggle.com/c/freesound-audio
 
 ## Pre-compute vggish audio features
 
-Use audioset/vggish_batch_inference.py to compute audio features from audio signals
+Use batch_inference.py to compute audio features from audio signals
 eg:
 ```bash
-python vggish_batch_inference.py --wav_train [train files] --wav_csv [train csv file]
+python batch_inference.py --wav_train [train files] --wav_csv [train csv file]
 ```
 
 ## Train
