@@ -21,8 +21,8 @@ import numpy as np
 import resampy
 from scipy.io import wavfile
 
-from . import mel_features
-from . import vggish_params
+from .mel_features import log_mel_spectrogram, frame
+from .vggish_params import *
 
 
 def waveform_to_examples(data, sample_rate):
@@ -39,45 +39,45 @@ def waveform_to_examples(data, sample_rate):
       3-D np.array of shape [num_examples, num_frames, num_bands] which represents
       a sequence of examples, each of which contains a patch of log mel
       spectrogram, covering num_frames frames of audio and num_bands mel frequency
-      bands, where the frame length is vggish_params.STFT_HOP_LENGTH_SECONDS.
+      bands, where the frame length is STFT_HOP_LENGTH_SECONDS.
     """
     # Convert to mono.
     if len(data.shape) > 1:
         data = np.mean(data, axis=1)
 
     if data.shape[0] == 0:
-        data = np.zeros(ceil(sample_rate * vggish_params.EXAMPLE_WINDOW_SECONDS))
-    elif data.shape[0] < sample_rate * vggish_params.EXAMPLE_WINDOW_SECONDS:
+        data = np.zeros(ceil(sample_rate * EXAMPLE_WINDOW_SECONDS))
+    elif data.shape[0] < sample_rate * EXAMPLE_WINDOW_SECONDS:
         data_length = data.shape[0]
-        multiplier = ceil(sample_rate * vggish_params.EXAMPLE_WINDOW_SECONDS / data_length)
+        multiplier = ceil(sample_rate * EXAMPLE_WINDOW_SECONDS / data_length)
         for i in range(multiplier):
             data = np.concatenate((data, data[:data_length]))
 
-    # print(sample_rate * vggish_params.EXAMPLE_WINDOW_SECONDS)
+    # print(sample_rate * EXAMPLE_WINDOW_SECONDS)
     # print(data.shape)
-    # data = data[:int(sample_rate * vggish_params.EXAMPLE_WINDOW_SECONDS)]
+    # data = data[:int(sample_rate * EXAMPLE_WINDOW_SECONDS)]
     # Resample to the rate assumed by VGGish.
-    if sample_rate != vggish_params.SAMPLE_RATE:
-        data = resampy.resample(data, sample_rate, vggish_params.SAMPLE_RATE)
+    if sample_rate != SAMPLE_RATE:
+        data = resampy.resample(data, sample_rate, SAMPLE_RATE)
 
     # Compute log mel spectrogram features.
-    log_mel = mel_features.log_mel_spectrogram(
+    log_mel = log_mel_spectrogram(
         data,
-        audio_sample_rate=vggish_params.SAMPLE_RATE,
-        log_offset=vggish_params.LOG_OFFSET,
-        window_length_secs=vggish_params.STFT_WINDOW_LENGTH_SECONDS,
-        hop_length_secs=vggish_params.STFT_HOP_LENGTH_SECONDS,
-        num_mel_bins=vggish_params.NUM_MEL_BINS,
-        lower_edge_hertz=vggish_params.MEL_MIN_HZ,
-        upper_edge_hertz=vggish_params.MEL_MAX_HZ)
+        audio_sample_rate=SAMPLE_RATE,
+        log_offset=LOG_OFFSET,
+        window_length_secs=STFT_WINDOW_LENGTH_SECONDS,
+        hop_length_secs=STFT_HOP_LENGTH_SECONDS,
+        num_mel_bins=NUM_MEL_BINS,
+        lower_edge_hertz=MEL_MIN_HZ,
+        upper_edge_hertz=MEL_MAX_HZ)
 
     # Frame features into examples.
-    features_sample_rate = 1.0 / vggish_params.STFT_HOP_LENGTH_SECONDS
+    features_sample_rate = 1.0 / STFT_HOP_LENGTH_SECONDS
     example_window_length = int(round(
-        vggish_params.EXAMPLE_WINDOW_SECONDS * features_sample_rate))
+        EXAMPLE_WINDOW_SECONDS * features_sample_rate))
     example_hop_length = int(round(
-        vggish_params.EXAMPLE_HOP_SECONDS * features_sample_rate))
-    log_mel_examples = mel_features.frame(
+        EXAMPLE_HOP_SECONDS * features_sample_rate))
+    log_mel_examples = frame(
         log_mel,
         window_length=example_window_length,
         hop_length=example_hop_length)

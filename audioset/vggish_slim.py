@@ -23,7 +23,7 @@ internal to Google. We call it 'VGGish'.
 
 Note that we only define the model up to the embedding layer, which is the
 penultimate layer before the final classifier layer. We also provide various
-hyperparameter values (in vggish_params.py) that were used to train this model
+hyperparameter values (in py) that were used to train this model
 internally.
 
 For comparison, here is TF-Slim's VGG definition:
@@ -31,7 +31,7 @@ https://github.com/tensorflow/models/blob/master/research/slim/nets/vgg.py
 """
 
 import tensorflow as tf
-from . import vggish_params as params
+from .vggish_params import *
 
 slim = tf.contrib.slim
 
@@ -46,7 +46,7 @@ def define_vggish_slim(training=False):
   num_frames and num_bands are constants, and [num_frames, num_bands] represents
   a log-mel-scale spectrogram patch covering num_bands frequency bands and
   num_frames time frames (where each frame step is usually 10ms). This is
-  produced by computing the stabilized log(mel-spectrogram + params.LOG_OFFSET).
+  produced by computing the stabilized log(mel-spectrogram + LOG_OFFSET).
   The output is an op named 'vggish/embedding' which produces the activations of
   a 128-D embedding layer, which is usually the penultimate layer when used as
   part of a full model with a final classifier layer.
@@ -65,7 +65,7 @@ def define_vggish_slim(training=False):
   # - All max-pools are 2x2 with stride 2 and SAME padding.
   with slim.arg_scope([slim.conv2d, slim.fully_connected],
                       weights_initializer=tf.truncated_normal_initializer(
-                          stddev=params.INIT_STDDEV),
+                          stddev=INIT_STDDEV),
                       biases_initializer=tf.zeros_initializer(),
                       activation_fn=tf.nn.relu,
                       trainable=training), \
@@ -76,10 +76,10 @@ def define_vggish_slim(training=False):
        tf.variable_scope('vggish'):
     # Input: a batch of 2-D log-mel-spectrogram patches.
     features = tf.placeholder(
-        tf.float32, shape=(None, params.NUM_FRAMES, params.NUM_BANDS),
+        tf.float32, shape=(None, NUM_FRAMES, NUM_BANDS),
         name='input_features')
     # Reshape to 4-D so that we can convolve a batch with conv2d().
-    net = tf.reshape(features, [-1, params.NUM_FRAMES, params.NUM_BANDS, 1])
+    net = tf.reshape(features, [-1, NUM_FRAMES, NUM_BANDS, 1])
 
     # The VGG stack of alternating convolutions and max-pools.
     net = slim.conv2d(net, 64, scope='conv1')
@@ -95,7 +95,7 @@ def define_vggish_slim(training=False):
     net = slim.flatten(net)
     net = slim.repeat(net, 2, slim.fully_connected, 4096, scope='fc1')
     # The embedding layer.
-    net = slim.fully_connected(net, params.EMBEDDING_SIZE, scope='fc2')
+    net = slim.fully_connected(net, EMBEDDING_SIZE, scope='fc2')
     return tf.identity(net, name='embedding')
 
 

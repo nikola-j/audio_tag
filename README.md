@@ -17,17 +17,18 @@ cd audioset
 curl -O https://storage.googleapis.com/audioset/vggish_model.ckpt
 curl -O https://storage.googleapis.com/audioset/vggish_pca_params.npz
 ```
-Test if VGGish is working:
-```
-# Installation ready, let's test it (from audioset).
-python vggish_smoke_test.py
-# If we see "Looks Good To Me", then we're all set.
-```
 
 ## Dataset
 
 Download dataset from this competition: https://www.kaggle.com/c/freesound-audio-tagging
 
+## Train
+
+Use train.py to train.py a model, choose a batch size and model to use
+
+## Inference
+
+Use jupyter to run inference, open 'Sound tag.ipynb'
 
 ## External code
 
