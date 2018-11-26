@@ -4,7 +4,7 @@
 
 Jedan od najvećih problema sa kojim se suočava semantički veb jeste tagovanje. Pošto korisnici interneta pri kreiranju sadržaja se retko kada posvete tagovanju materijala, jedino skalabilno rešenje jeste da se to radi automatski. Za automatsko tagovanje teksta postoje razne tehnike (PMI, TF-IDF itd), ali za snimke zvuka je to jako teško raditi jer podaci imaju mnogo više šuma. Ali u zadnjih nekoliko godina sistemi koji rešavaju ovaj problem imaju velik porast u performansama zbog povećanog korišćenja neuralnih mreža i sve većih setova podataka.
 
-| ![1541149013758](/home/njovicic/Documents/audio_tag/.images/1541149013758.png) |
+| ![1541149013758](.images/1541149013758.png) |
 | :----------------------------------------------------------: |
 | Performanse sistema za detekciju događaja tokom vremena ([izvor](http://www.cs.tut.fi/~heittolt/research-sound-event-detection)) |
 

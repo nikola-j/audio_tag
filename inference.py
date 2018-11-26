@@ -16,6 +16,9 @@ def run_inference_model(input_wav, checkpoint):
 
     full_x = np.array(full_x)
 
+    if "snn" in checkpoint:
+        full_x = full_x[:, :, None]
+
     model = load_model(checkpoint)
 
     return model.predict(full_x)

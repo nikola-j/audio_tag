@@ -1,8 +1,10 @@
 scipy==1.1.0
 resampy==0.2.1
-tensorflow-gpu==1.8.0
+tensorflow==1.8.0
 six==1.11.0
 pandas==0.23.4
 keras==2.2.4
 scikit-learn==0.20.0
 pydot==1.2.4
+youtube-dl==2018.11.7
+jupyter==1.0.0
